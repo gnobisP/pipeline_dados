@@ -137,7 +137,8 @@ clean:
 install_meltano: venv-meltano
 	venv_meltano/bin/pip3 install --upgrade pip
 	venv_meltano/bin/pip3 install meltano
-	. $(VENV_PATH_MELTANO)
+	. $(VENV_PATH_MELTANO) && \
+	cd metano-project
 
 configura_meltano: create-tap-parquet create-tap-csv create-tap-postgres create-load-parquet create-load-jsonl
 
