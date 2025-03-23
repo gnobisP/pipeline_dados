@@ -170,23 +170,28 @@ install_metano: install setup create-tap-postgres
 install_airflow: airflow-install airflow-config-user airflow-start
 
  
-airflow-install: 
+airflow-install: venv-airflow
+	. $(VENV_PATH_AIRFLOW) && \
 	pip install "apache-airflow[celery]==2.10.4" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.12.txt" && \
 	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
-	mkdir -p ./dags ./logs ./plugins ./config && /
+	mkdir -p ./dags ./logs ./plugins ./config && \
 	airflow db migrate
 
 airflow-config-user:
+	. $(VENV_PATH_AIRFLOW) && \
 	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
 	airflow db migrate && \
-	cd $(AIRFLOW_PATH) && \
+	cd airflow && \
 	airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@admin.com --password 123456
-#export AIRFLOW_HOME=/home/gnobisp/Documents/folder1/code-challenge/airflow
+#export AIRFLOW_HOME=/home/gnobisp/Documents/pipeline_dados/airflow
+
 airflow-start0:#abrir novo terminal
+	. $(VENV_PATH_AIRFLOW) && \
 	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
 	airflow webserver -p 8089
 
 airflow-start1:
+	. $(VENV_PATH_AIRFLOW) && \
 	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
 	airflow scheduler
 	

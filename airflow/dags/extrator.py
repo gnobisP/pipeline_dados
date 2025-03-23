@@ -31,16 +31,10 @@ with DAG(
         bash_command="script/extratorCSV.sh",
     )
 
-    process_data = PythonOperator(
-        task_id="process_data",
-        python_callable=process_data_function,
+    fase2 = BashOperator(
+        task_id="fase2",
+        bash_command="script/fase2.sh",
     )
 
-    bash_task = BashOperator(
-        task_id="bash_task",
-        bash_command="echo \"here is the message: '$message'\"",
-        env={"message": '{{ dag_run.conf["message"] if dag_run.conf else "" }}'},
-        )
-
     # Executar extrações em paralelo
-    [extract_csv, extract_postgres, bash_task] >> process_data
+    [extract_csv, extract_postgres] >> fase2

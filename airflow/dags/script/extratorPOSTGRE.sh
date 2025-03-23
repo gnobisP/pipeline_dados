@@ -1,31 +1,21 @@
+#!/bin/bash
 
 # Defina o caminho do ambiente virtual
-VENV_PATH="/home/gnobisp/Documents/floder1/code-challenge/venv/bin/activate"
-PROJECT_PATH="/home/gnobisp/Documents/floder1/code-challenge/metano-project"
-DATA_PATH="/home/gnobisp/Documents/floder1/code-challenge/data"
+VENV_PATH="/home/gnobisp/Documents/pipeline_dados/venv_meltano/bin/activate"
+PROJECT_PATH="/home/gnobisp/Documents/pipeline_dados/metano-project"
 
 # Ativa o ambiente virtual
-source $VENV_PATH
+source "$VENV_PATH"
 
 # Obtém a data atual para organizar as pastas
 CURRENT_DATE=$(date +%Y-%m-%d)
 
-# Função para obter caminho de saída
-get_output_path() {
-    local source_type=$1  # "csv" ou "postgres"
-    local table_name=$2  # Nome da tabela ou "csv" para arquivos CSV
-    echo "$DATA_PATH/$source_type/$table_name/$CURRENT_DATE/"
-}
-
 # Função para extrair dados do Postgres
 extract_postgres() {
-    set -e
-    cd $PROJECT_PATH
-    local output_dir=$(get_output_path "postgres" "$table")
-    mkdir -p "$output_dir"
-    export TARGET_PARQUET_DESTINATION_PATH="$output_dir"
-    meltano run tap-postgres target-parquet
-    
+    set -e  # Para o script em caso de erro
+    cd "$PROJECT_PATH" || { echo "Falha ao acessar $PROJECT_PATH"; exit 1; }
+    meltano elt tap-postgres target-postgres-csv
 }
 
+# Chama a função
 extract_postgres

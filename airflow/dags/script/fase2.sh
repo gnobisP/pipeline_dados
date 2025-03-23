@@ -10,12 +10,13 @@ source "$VENV_PATH"
 # Obtém a data atual para organizar as pastas
 CURRENT_DATE=$(date +%Y-%m-%d)
 
-# Função para extrair dados do CSV
-extract_csv() {
+# Função para extrair dados do Postgres
+extract_fase2() {
     set -e  # Para o script em caso de erro
     cd "$PROJECT_PATH" || { echo "Falha ao acessar $PROJECT_PATH"; exit 1; }
-    meltano elt tap-csv target-csv-csv
+    export DATE=$(date +%Y-%m-%d)
+    meltano elt tap-csv-fase2 target-postgres
 }
 
 # Chama a função
-extract_csv
+extract_fase2

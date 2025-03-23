@@ -79,7 +79,7 @@ plugins:
       - entity: employee_territories
         path: ../data/postgres/public-employee_territories/$DATE/file.csv
         keys: [employee_id, territory_id]
-        delimiter: ',' 
+        delimiter: ','
 
       - entity: us_states
         path: ../data/postgres/public-us_states/$DATE/file.csv
