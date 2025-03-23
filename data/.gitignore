@@ -1,2 +1,12 @@
-/csv
-/postgres
+# Ignora tudo
+*
+!.gitignore
+
+# Exceto a pasta "minha_pasta"
+#!minha_pasta/
+#!minha_pasta/**
+
+# Mantém arquivo
+!northwind.sql
+!order_details.csv
+!warehouse.sql

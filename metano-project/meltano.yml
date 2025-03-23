@@ -21,6 +21,71 @@ plugins:
         - order_id
         format: csv
 
+
+  - name: tap-csv-fase2
+    inherit_from: tap-csv
+    config:
+      files:
+      - entity: categories
+        path: ../data/postgres/public-categories/$DATE/file.csv
+        keys: [category_id]
+        delimiter: ','
+
+      - entity: products
+        path: ../data/postgres/public-products/$DATE/file.csv
+        keys: [product_id]
+        delimiter: ','
+
+      - entity: suppliers
+        path: ../data/postgres/public-suppliers/$DATE/file.csv
+        keys: [supplier_id]
+        delimiter: ','
+
+      - entity: customers
+        path: ../data/postgres/public-customers/$DATE/file.csv
+        keys: [customer_id]
+        delimiter: ','
+
+      - entity: employees
+        path: ../data/postgres/public-employees/$DATE/file.csv
+        keys: [employee_id]
+        delimiter: ','
+
+      - entity: shippers
+        path: ../data/postgres/public-shippers/$DATE/file.csv
+        keys: [shipper_id]
+        delimiter: ','
+
+      - entity: orders
+        path: ../data/postgres/public-orders/$DATE/file.csv
+        keys: [order_id]
+        delimiter: ','
+
+      - entity: order_details
+        path: ../data/csv/$DATE/file.csv
+        keys: [order_id, product_id]
+        delimiter: ','
+
+      - entity: territories
+        path: ../data/postgres/public-territories/$DATE/file.csv
+        keys: [territory_id]
+        delimiter: ','
+
+      - entity: region
+        path: ../data/postgres/public-region/$DATE/file.csv
+        keys: [region_id]
+        delimiter: ','
+
+      - entity: employee_territories
+        path: ../data/postgres/public-employee_territories/$DATE/file.csv
+        keys: [employee_id, territory_id]
+        delimiter: ',' 
+
+      - entity: us_states
+        path: ../data/postgres/public-us_states/$DATE/file.csv
+        keys: [state_id]
+        delimiter: ','
+
   - name: tap-postgres
     variant: meltanolabs
     pip_url: meltanolabs-tap-postgres
@@ -30,88 +95,13 @@ plugins:
       dbname: northwind
       user: northwind_user
       database: northwind
+      default_replication_method: FULL_TABLE
       filter_schemas:
       - public
-
-##ADAPTADOS
-  - name: tap-csv-fase2
-    inherit_from: tap-csv
-    config:
-      files:
-        - entity: categories
-          path: ../data/postgres/public-categories/$DATE/file.csv
-          keys:
-          - category_id
-          format: csv
-
-        - entity: products
-          path: ../data/postgres/public-products/$DATE/file.csv
-          keys:
-          - product_id
-          format: csv
-        
-        - entity: suppliers
-          path: ../data/postgres/public-suppliers/$DATE/file.csv
-          keys:
-          - supplier_id  
-          format: csv
-        
-        - entity: customers
-          path: ../data/postgres/public-customers/$DATE/file.csv
-          keys:
-          - customer_id
-          format: csv
-        
-        - entity: employees
-          path: ../data/postgres/public-employees/$DATE/file.csv
-          keys:
-          - employee_id
-          format: csv
-        
-        - entity: shippers
-          path: ../data/postgres/public-shippers/$DATE/file.csv
-          keys:
-          - shipper_id
-          format: csv
-        
-        - entity: orders
-          path: ../data/postgres/public-orders/$DATE/file.csv
-          keys:
-          - orders_id
-          format: csv
-        
-        - entity: order_details
-          path: ../data/csv/$DATE/file.csv
-          keys:
-          - order_id
-          - product_id
-          format: csv
-        
-        - entity: territories
-          path: ../data/postgres/public-territories/$DATE/file.csv
-          keys: 
-          - territory_id
-          format: csv
-
-        - entity: region
-          path: ../data/postgres/public-region/$DATE/file.csv
-          keys:
-          - region_id
-          format: csv
-
-        - entity: employee_territories
-          path: ../data/postgres/public-employee_territories/$DATE/file.csv
-          keys:
-          - employee_id
-          - territory_id
-          format: csv
-
-        - entity: us_states
-          path: ../data/postgres/public-us_states/$DATE/file.csv
-          keys:
-          - state_id
-          format: csv
-
+      max_record_count: 10000
+      dates_as_string: false
+      json_as_object: false
+      ssl_enable: false
   loaders:
   - name: target-parquet
     variant: automattic
@@ -122,14 +112,11 @@ plugins:
     variant: andyh1203
     pip_url: target-jsonl
     config:
-      destination_path: /home/gnobisp/Documents/pipeline_dados/data
+      destination_path: /home/gnobisp/Documents/pipeline_dados/data/jsonl
 
   - name: target-csv
     variant: meltanolabs
     pip_url: git+https://github.com/MeltanoLabs/target-csv.git
-
-
-##ADAPTADOS
   - name: target-csv-csv
     inherit_from: target-csv
     config:
@@ -147,7 +134,7 @@ plugins:
     inherit_from: target-parquet
     config:
       destination_path: ../data/postgres/
-      
+
   - name: target-jsonl-csv
     inherit_from: target-jsonl
     config:
@@ -173,3 +160,13 @@ plugins:
 
 
 
+  - name: target-postgres
+    variant: meltanolabs
+    pip_url: meltanolabs-target-postgres
+    config:
+      host: localhost
+      port: 5433
+      database: data_warehouse  # Use "database" em vez de "dbname"
+      user: dw_user
+      password: dw_password
+      default_target_schema: public

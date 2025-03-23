@@ -1,3 +1,5 @@
+-- PGPASSWORD=thewindisblowing psql -h localhost -p 5432 -U northwind_user -d northwind
+
 --
 -- PostgreSQL database dump
 --

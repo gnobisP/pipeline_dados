@@ -1,3 +1,5 @@
 /venv_meltano
 customers.csv
 /dbdata
+/dw_data
+/venv

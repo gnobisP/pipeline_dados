@@ -1,0 +1,19 @@
+#CRIAR ESQUEMA PARA CADA TABELA
+# se eu não criar o esquema, o singer vai criar um esquema automaticamente o que pode dar conflito futuramente....
+plugins:
+  extractors:
+    - name: tap-csv-fase2
+      inherit_from: tap-csv
+      config:
+        files:
+          - entity: products
+            path: ../data/postgres/public-products/$DATE/file.csv
+            keys: ["product_id"]
+            format: csv
+            schema:  # Adicione esta seção
+              properties:
+                product_id:
+                  type: integer
+
+
+# preciso sempre criar um schema para cada data no warehouse?

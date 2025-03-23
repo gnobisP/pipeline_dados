@@ -106,7 +106,7 @@ create-load-jsonl:
 	. $(VENV_PATH_MELTANO) && \
 	cd metano-project && \
 	meltano add loader target-jsonl && \
-	meltano config target-jsonl set destination_path $(OUTPUT_DIR)
+	meltano config target-jsonl set destination_path $(OUTPUT_DIR)/jsonl
 
 # Configuração do tap-postgres (mantido igual)
 create-load-csv:
@@ -115,13 +115,27 @@ create-load-csv:
 	meltano add loader target-csv && \
 	meltano config target-csv set destination_path $(OUTPUT_DIR)
 
+# Configuração do tap-postgres (mantido igual)
+create-load-postgres:
+	. $(VENV_PATH_MELTANO) && \
+	cd metano-project && \
+	meltano add loader target-postgres && \
+	meltano config target-postgres set host localhost && \
+	meltano config target-postgres set port 5433 && \
+	meltano config target-postgres set user dw_user && \
+	meltano config target-postgres set password dw_password && \
+	meltano config target-postgres set dbname data_warehouse
+
+
 	
 # Executar o pipeline de ETL para salvar em Parquet
 run-etl:
 	. $(VENV_PATH_MELTANO) && \
 	cd metano-project && \
 	meltano elt tap-csv target-csv-csv && \
-	meltano elt tap-postgres target-postgres-csv
+	meltano elt tap-postgres target-postgres-csv && \
+	DATE=$$(date +"%Y-%m-%d") meltano elt tap-csv-fase2 target-jsonl && \
+	DATE=$$(date +"%Y-%m-%d") meltano --log-level=debug elt tap-csv-fase2 target-postgres
 	
 
 run-nuvem:
