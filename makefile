@@ -158,9 +158,12 @@ configura_meltano: create-tap-parquet create-tap-csv create-tap-postgres create-
 
 setup_meltano: install_meltano configura_meltano
 
+setup_docker:
+	docker compose -f 'docker-compose.yml' up -d --build 'db' && \
+	docker compose -f 'docker-compose.yml' up -d --build 'data_warehouse_db'
 
 # Tarefa padrão: instala, configura e executa o pipeline
-run: install setup create-tap-postgres run-etl 
+run-meltano: setup_docker setup_meltano run-etl
 
 install_metano: install setup create-tap-postgres
 
