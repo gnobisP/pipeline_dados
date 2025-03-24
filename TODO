@@ -5,10 +5,12 @@
 
 ## 🔵 Prioridade Média (Melhorias)
 - [ ] Criar um docker-compose para rodar o meltano e o airflow
+- [ ] Criar pasta para as 2 tabelas que estão vazias
 
 
 ## 🟢 Prioridade Baixa (Futuro)
 - [ ] Adicionar suporte a Parquet como formato intermediário
+- [ ] Adicionar parâmetro para rodar o pipeline em qualquer data
 
 ### 🛠 Infraestrutura
     - [ ] Adicionar o Selenium para coletar dados

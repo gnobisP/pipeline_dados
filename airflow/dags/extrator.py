@@ -3,17 +3,17 @@ from airflow.operators.bash import BashOperator
 from datetime import datetime
 
 default_args = {
-    "owner": "northwind_team",
+    "owner": "gnobisP",
     "start_date": datetime(2024, 1, 1),
     "retries": 2
 }
 
 with DAG(
-    "northwind_data_pipeline",
+    "pipeline_dados",
     default_args=default_args,
     schedule="@hourly",
     catchup=False,  
-    description="Pipeline para extrair dados do Northwind e salvar em Parquet",
+    description="Pipeline para extrair dados do Northwind e de um arquivo csv local e salva em um BD Postgres Warehouse",
     tags=["northwind", "elt"],
 ) as dag:
 
