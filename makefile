@@ -1,71 +1,157 @@
-.PHONY: venv install deactivate clean
+# =============================================
+# VARIÁVEIS DE AMBIENTE E CONFIGURAÇÃO
+# =============================================
 
-# Cria o ambiente virtual
-venv-airflow:
-	python3.10 -m venv venv_airflow
- 
-venv-meltano:
-	python3.10 -m venv venv_meltano
-
-discard-changes:
-	git checkout -- .
-	git reset --hard HEAD
-	git clean -fd
-
-teste-conexao:
-	python3 -m venv venv && \
-	$(ACTIVATE_VENV_TESTE_CONEXAO) \
-	pip install pandas && \
-	pip install psycopg2-binary && \
-	python3 testeConexao.py
-
-reinicia-conexao:
-	docker-compose down && \
-	docker-compose up -d
-
-# Comando para ativar o ambiente virtual e executar comandos no projeto Meltano
-ACTIVATE_VENV_MELTANO := . $(VENV_PATH_MELTANO)
-# Comando para ativar o ambiente virtual e executar comandos no projeto Meltano
-ACTIVATE_VENV_AIRFLOW := . $(VENV_PATH_AIRFLOW) && cd $(PROJECT_DIR) &&
-# Comando para ativar o ambiente virtual e executar comandos no projeto Meltano
-ACTIVATE_VENV_TESTE_CONEXAO := . $(VENV_PATH_TESTE) 
-# Define o diretório do projeto como o diretório atual
+# Diretórios
 PROJECT_DIR := $(shell pwd)
-# Define o caminho para o ambiente virtual (assumindo que ele está na pasta 'venv' dentro do projeto)
-VENV_PATH_AIRFLOW := $(PROJECT_DIR)/venv_airflow/bin/activate
-# Define o caminho para o ambiente virtual (assumindo que ele está na pasta 'venv' dentro do projeto)
-VENV_PATH_MELTANO := $(PROJECT_DIR)/venv_meltano/bin/activate
-# Define o caminho para o ambiente virtual (assumindo que ele está na pasta 'venv' dentro do projeto)
-VENV_PATH_TESTE := $(PROJECT_DIR)/venv/bin/activate
-# Define o caminho para o arquivo CSV (assumindo que ele está na pasta 'data' dentro do projeto)
-CSV_PATH := $(PROJECT_DIR)/data/order_details.csv
-# Define o diretório de saída (assumindo que ele está na pasta 'data' dentro do projeto)
 OUTPUT_DIR := $(PROJECT_DIR)/data
-# define airflow dir
 AIRFLOW_PATH := $(PROJECT_DIR)/airflow
+CSV_PATH := $(PROJECT_DIR)/data/order_details.csv
 
-# Instala os pacotes no ambiente virtual
-install: venv-meltano
+# Caminhos para ambientes virtuais
+VENV_AIRFLOW := $(PROJECT_DIR)/venv_airflow/bin/activate
+VENV_MELTANO := $(PROJECT_DIR)/venv_meltano/bin/activate
+VENV_TEST := $(PROJECT_DIR)/venv/bin/activate
+
+# Comandos de ativação
+ACTIVATE_VENV_AIRFLOW := . $(VENV_AIRFLOW) && cd $(PROJECT_DIR)
+ACTIVATE_VENV_MELTANO := . $(VENV_MELTANO)
+ACTIVATE_VENV_TEST := . $(VENV_TEST)
+
+# =============================================
+# TARGETS PRINCIPAIS
+# =============================================
+
+
+.PHONY: setup
+setup: setup-docker setup-meltano setup-airflow
+	@echo "Setup completo: Docker, Meltano e Airflow configurados"
+
+
+.PHONY: start
+start: start-airflow
+	@echo "✅ Todos os sistemas foram iniciados!"
+	@echo "• Airflow: http://localhost:8089"
+	@echo "• Meltano: Pronto para executar pipelines"
+
+
+# =============================================
+# DOCKER
+# =============================================
+
+.PHONY: setup-docker
+setup-docker:
+	docker compose -f 'docker-compose.yml' up -d --build 'db' && \
+	docker compose -f 'docker-compose.yml' up -d --build 'data_warehouse_db'
+	@echo "Serviços Docker configurados e iniciados"
+
+# =============================================
+# MELTANO
+# =============================================
+
+.PHONY: setup-meltano
+setup-meltano: install-meltano configure-meltano
+	@echo "Meltano instalado e configurado"
+
+.PHONY: install-meltano
+install-meltano: venv-meltano
 	venv_meltano/bin/pip3 install --upgrade pip
 	venv_meltano/bin/pip3 install meltano
+	@echo "Meltano instalado no ambiente virtual"
 
-# Configuração inicial do projeto Meltano
-setup:
-	. $(VENV_PATH_MELTANO) && \
-	meltano init metano-project && \
+.PHONY: configure-meltano
+configure-meltano: create-taps create-loaders
+	@echo "Taps e loaders do Meltano configurados"
+
+.PHONY: create-taps
+create-taps: create-tap-parquet create-tap-csv create-tap-postgres
+	@echo "Todos os taps criados"
+
+.PHONY: create-loaders
+create-loaders: create-load-parquet create-load-jsonl create-load-csv create-load-postgres
+	@echo "Todos os loaders criados"
+
+.PHONY: run-etl
+run-etl:
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
-	meltano add extractor tap-parquet && \
-	meltano add extractor tap-csv --variant meltanolabs && \
-	meltano config tap-csv set files '[{"entity": "order_details", "path": "$(CSV_PATH)", "keys": ["order_id"], "format": "csv"}]' && \
-	meltano add loader target-parquet && \
-	meltano add loader target-jsonl && \
-	meltano config target-parquet set destination_path $(OUTPUT_DIR)  && \
-	meltano config target-jsonl set destination_path $(OUTPUT_DIR)
-	
+	DATE=$$(date +"%Y-%m-%d %H") meltano elt tap-csv target-csv-csv && \
+	DATE=$$(date +"%Y-%m-%d %H") meltano elt tap-postgres target-postgres-csv && \
+	DATE=$$(date +"%Y-%m-%d %H") meltano elt tap-csv-fase2 target-jsonl && \
+	DATE=$$(date +"%Y-%m-%d %H") meltano elt tap-csv-fase2 target-postgres
+	@echo "Pipeline ETL executado"
 
-# Configuração do tap-postgres (mantido igual)
+
+# =============================================
+# AIRFLOW
+# =============================================
+
+.PHONY: setup-airflow
+setup-airflow: install-airflow configure-airflow-user
+	@echo "Airflow instalado e configurado"
+
+.PHONY: install-airflow
+install-airflow: venv-airflow
+	$(ACTIVATE_VENV_AIRFLOW) && \
+	pip install "apache-airflow[celery]==2.10.4" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.12.txt" && \
+	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
+	airflow db migrate
+	@echo "Airflow instalado no ambiente virtual"
+
+.PHONY: configure-airflow-user
+configure-airflow-user:
+	$(ACTIVATE_VENV_AIRFLOW) && \
+	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
+	airflow db migrate && \
+	airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@admin.com --password 123456
+	@echo "Usuário admin do Airflow configurado"
+
+.PHONY: start-airflow
+start-airflow: start-airflow-webserver start-airflow-scheduler
+	@echo "Airflow webserver e scheduler iniciados em background"
+
+.PHONY: start-airflow-webserver
+start-airflow-webserver:
+	. $(VENV_PATH_AIRFLOW) && \
+	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
+	airflow webserver -p 8089
+
+.PHONY: start-airflow-scheduler
+start-airflow-scheduler:
+	. $(VENV_PATH_AIRFLOW) && \
+	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
+	airflow scheduler
+
+.PHONY: stop-airflow
+stop-airflow:
+	@if [ -f airflow-webserver.pid ]; then \
+		echo "Parando webserver (PID: $$(cat airflow-webserver.pid))"; \
+		kill $$(cat airflow-webserver.pid); \
+		rm airflow
+
+
+# =============================================
+# AMBIENTES VIRTUAIS
+# =============================================
+
+.PHONY: venv-airflow
+venv-airflow:
+	python3.10 -m venv venv_airflow
+	@echo "Ambiente virtual para Airflow criado"
+
+.PHONY: venv-meltano
+venv-meltano:
+	python3.10 -m venv venv_meltano
+	@echo "Ambiente virtual para Meltano criado"
+
+# =============================================
+# TARGETS INDIVIDUAIS PARA TAPS E LOADERS
+# =============================================
+
+# Taps
+.PHONY: create-tap-postgres
 create-tap-postgres:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
 	meltano add extractor tap-postgres --variant meltanolabs && \
 	meltano config tap-postgres set host localhost && \
@@ -80,44 +166,51 @@ create-tap-postgres:
 	meltano config tap-postgres set dates_as_string false && \
 	meltano config tap-postgres set json_as_object false && \
 	meltano config tap-postgres set ssl_enable false
+	@echo "Tap PostgreSQL configurado"
 
-# Configuração do tap-postgres (mantido igual)
+.PHONY: create-tap-parquet
 create-tap-parquet:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
 	meltano add extractor tap-parquet
-	
+	@echo "Tap Parquet configurado"
 
-# Configuração do tap-postgres (mantido igual)
+.PHONY: create-tap-csv
 create-tap-csv:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
-	meltano add extractor tap-csv --variant meltanolabs
+	meltano add extractor tap-csv --variant meltanolabs && \
+	meltano config tap-csv set files '[{"entity": "order_details", "path": "$(CSV_PATH)", "keys": ["order_id"], "format": "csv"}]'
+	@echo "Tap CSV configurado"
 
-# Configuração do tap-postgres (mantido igual)
+# Loaders
+.PHONY: create-load-parquet
 create-load-parquet:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
 	meltano add loader target-parquet && \
-	meltano config target-parquet set destination_path $(OUTPUT_DIR) 
+	meltano config target-parquet set destination_path $(OUTPUT_DIR)
+	@echo "Loader Parquet configurado"
 
-# Configuração do tap-postgres (mantido igual)
+.PHONY: create-load-jsonl
 create-load-jsonl:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
 	meltano add loader target-jsonl && \
 	meltano config target-jsonl set destination_path $(OUTPUT_DIR)/jsonl
+	@echo "Loader JSONL configurado"
 
-# Configuração do tap-postgres (mantido igual)
+.PHONY: create-load-csv
 create-load-csv:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
 	meltano add loader target-csv && \
 	meltano config target-csv set destination_path $(OUTPUT_DIR)
+	@echo "Loader CSV configurado"
 
-# Configuração do tap-postgres (mantido igual)
+.PHONY: create-load-postgres
 create-load-postgres:
-	. $(VENV_PATH_MELTANO) && \
+	$(ACTIVATE_VENV_MELTANO) && \
 	cd metano-project && \
 	meltano add loader target-postgres && \
 	meltano config target-postgres set host localhost && \
@@ -125,89 +218,22 @@ create-load-postgres:
 	meltano config target-postgres set user dw_user && \
 	meltano config target-postgres set password dw_password && \
 	meltano config target-postgres set dbname data_warehouse
+	@echo "Loader PostgreSQL configurado"
 
+# =============================================
+# UTILITÁRIOS
+# =============================================
 
-	
-# Executar o pipeline de ETL para salvar em Parquet
-run-etl:
-	. $(VENV_PATH_MELTANO) && \
-	cd metano-project && \
-	meltano elt tap-csv target-csv-csv && \
-	meltano elt tap-postgres target-postgres-csv && \
-	DATE=$$(date +"%Y-%m-%d") meltano elt tap-csv-fase2 target-jsonl && \
-	DATE=$$(date +"%Y-%m-%d") meltano --log-level=debug elt tap-csv-fase2 target-postgres
-	
-
-run-nuvem:
-	meltano elt tap-parquet target-postgres
-
-# Limpa o ambiente (opcional)
+.PHONY: clean
 clean:
-	rm -rf venv
-	rm -rf metano-project
-	
+	@echo "Limpando ambientes virtuais..."
+	rm -rf venv_airflow venv_meltano venv
+	@echo "Ambientes virtuais removidos"
 
 
-install_meltano: venv-meltano
-	venv_meltano/bin/pip3 install --upgrade pip
-	venv_meltano/bin/pip3 install meltano
-	. $(VENV_PATH_MELTANO) && \
-	cd metano-project
+#sudo lsof -i :5432 docker-compose
+#sudo lsof -i :5433 docker-compose
+#SUDO lsof -i :8793 airflow-scheduler
+#sudo lsof -i :8089 airflow-webserver
 
-configura_meltano: create-tap-parquet create-tap-csv create-tap-postgres create-load-parquet create-load-jsonl
-
-setup_meltano: install_meltano configura_meltano
-
-setup_docker:
-	docker compose -f 'docker-compose.yml' up -d --build 'db' && \
-	docker compose -f 'docker-compose.yml' up -d --build 'data_warehouse_db'
-
-# Tarefa padrão: instala, configura e executa o pipeline
-run-meltano: setup_docker setup_meltano run-etl
-
-install_metano: install setup create-tap-postgres
-
-install_airflow: airflow-install airflow-config-user airflow-start
-
- 
-airflow-install: venv-airflow
-	. $(VENV_PATH_AIRFLOW) && \
-	pip install "apache-airflow[celery]==2.10.4" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.12.txt" && \
-	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
-	mkdir -p ./dags ./logs ./plugins ./config && \
-	airflow db migrate
-
-airflow-config-user:
-	. $(VENV_PATH_AIRFLOW) && \
-	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
-	airflow db migrate && \
-	cd airflow && \
-	airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@admin.com --password 123456
-#export AIRFLOW_HOME=/home/gnobisp/Documents/pipeline_dados/airflow
-
-airflow-start0:#abrir novo terminal
-	. $(VENV_PATH_AIRFLOW) && \
-	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
-	airflow webserver -p 8089
-
-airflow-start1:
-	. $(VENV_PATH_AIRFLOW) && \
-	export AIRFLOW_HOME=$(AIRFLOW_PATH) && \
-	airflow scheduler
-	
-airflow: airflow-install airflow-config-user airflow-start
-
-#fazer alterações do video 13:57
-airflow-docker:
-	mkdir docker-compose && /
-	cd docker-compose && /
-	curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.10.4/docker-compose.yaml' && /
-	mkdir -p ./dags ./logs ./plugins ./config && /
-	echo -e "AIRFLOW_UID=$(id -u)" > .env  && /
-	docker-compose up airflow-init  && /
-	docker-compose up -d
-	
-airflow-process:
-	lsof -i :8793 && \
-	kill -9 PID 
-#utilizar SUDO
+#sudo kill -9 <PID>

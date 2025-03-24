@@ -16,12 +16,10 @@ plugins:
     config:
       files:
       - entity: order_details
-        path: ../data
+        path: /home/gnobisp/Documents/pipeline_dados/data/order_details.csv
         keys:
         - order_id
         format: csv
-
-
   - name: tap-csv-fase2
     inherit_from: tap-csv
     config:
@@ -117,17 +115,19 @@ plugins:
   - name: target-csv
     variant: meltanolabs
     pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+    config:
+      destination_path: /home/gnobisp/Documents/pipeline_dados/data
   - name: target-csv-csv
     inherit_from: target-csv
     config:
       output_path: ../data/csv
-      file_naming_scheme: '{datestamp}/file.csv'  # Esquema dinâmico aqui
+      file_naming_scheme: $DATE/file.csv    # Esquema dinâmico aqui
 
   - name: target-postgres-csv
     inherit_from: target-csv
     config:
       output_path: ../data/postgres  # Diretório base (sem variáveis)
-      file_naming_scheme: '{stream_name}/{datestamp}/file.csv'  # Esquema dinâmico aqui
+      file_naming_scheme: '{stream_name}/$DATE/file.csv'  # Esquema dinâmico aqui
       datestamp_format: '%Y-%m-%d'
 
   - name: target-parquet-postgres
@@ -170,3 +170,4 @@ plugins:
       user: dw_user
       password: dw_password
       default_target_schema: public
+      dbname: data_warehouse

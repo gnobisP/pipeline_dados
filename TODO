@@ -1,19 +1,22 @@
-#CRIAR ESQUEMA PARA CADA TABELA
-# se eu não criar o esquema, o singer vai criar um esquema automaticamente o que pode dar conflito futuramente....
-plugins:
-  extractors:
-    - name: tap-csv-fase2
-      inherit_from: tap-csv
-      config:
-        files:
-          - entity: products
-            path: ../data/postgres/public-products/$DATE/file.csv
-            keys: ["product_id"]
-            format: csv
-            schema:  # Adicione esta seção
-              properties:
-                product_id:
-                  type: integer
+# 🚀 TODO LIST - PROJETO PIPELINE_DADOS
+
+## 🔴 Prioridade Alta (Urgente)
+- Nada por enquanto
+
+## 🔵 Prioridade Média (Melhorias)
+- [ ] Criar um docker-compose para rodar o meltano e o airflow
 
 
-# preciso sempre criar um schema para cada data no warehouse?
+## 🟢 Prioridade Baixa (Futuro)
+- [ ] Adicionar suporte a Parquet como formato intermediário
+
+### 🛠 Infraestrutura
+    - [ ] Adicionar o Selenium para coletar dados
+    - [ ] Coletar dado de BD públicos
+
+### 📊 Monitoramento
+    - [ ] Criar uma dashboard para monitorar os dados
+
+## 📝 Documentação
+- Nada por enquanto
+
