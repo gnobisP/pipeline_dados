@@ -1,5 +1,7 @@
 ## O Projeto
 
+### Projeto realizado para o desafio técnico da Indicium
+
 Existem duas fontes de dados: 
 1. Um banco de dados **PostgreSQL** (Northwind). 
 2. Um arquivo **CSV** com detalhes de pedidos de um sistema de e-commerce.
@@ -92,5 +94,3 @@ Contém os arquivos responsáveis pela arquitetura do pipeline
 - **`metano-project/README.md`**: Documentação do meltano.
 - **`makefile`**: Regras para instalações das ferramentas
 ---
-
-- Projeto realizado para o desafio da Indicium
