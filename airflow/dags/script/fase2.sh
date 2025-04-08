@@ -9,7 +9,7 @@ source "$VENV_PATH"
 extract_fase2() {
     set -e  # Para o script em caso de erro
     cd "$PROJECT_PATH" || { echo "Falha ao acessar $PROJECT_PATH"; exit 1; }
-    DATE=$(date +"%Y-%m-%d--%H") meltano elt tap-csv-fase2 target-postgres
+    DATE=$(date +"%Y-%m-%d") meltano elt tap-csv-fase2 target-postgres
 }
 
 # Chama a função

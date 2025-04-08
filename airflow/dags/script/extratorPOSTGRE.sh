@@ -9,7 +9,7 @@ source "$VENV_PATH"
 extract_postgres() {
     set -e  # Para o script em caso de erro
     cd "$PROJECT_PATH"
-    DATE=$(date +"%Y-%m-%d--%H") meltano elt tap-postgres target-postgres-csv
+    DATE=$(date +"%Y-%m-%d") meltano elt tap-postgres target-postgres-csv
 }
 
 # Chama a função

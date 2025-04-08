@@ -9,9 +9,9 @@ default_args = {
 }
 
 with DAG(
-    "pipeline_dados",
+    "pipeline_dados_indicium",
     default_args=default_args,
-    schedule="@hourly",
+    schedule="@daily",
     catchup=False,  
     description="Pipeline para extrair dados do Northwind e de um arquivo csv local e salva em um BD Postgres Warehouse",
     tags=["northwind", "elt"],

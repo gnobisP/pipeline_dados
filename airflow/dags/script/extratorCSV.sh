@@ -9,7 +9,7 @@ source "$VENV_PATH"
 extract_csv() {
     set -e  # Para o script em caso de erro
     cd "$PROJECT_PATH"
-    DATE=$(date +"%Y-%m-%d--%H") meltano elt tap-csv target-csv-csv
+    DATE=$(date +"%Y-%m-%d") meltano elt tap-csv target-csv-csv
 }
 
 # Chama a função
