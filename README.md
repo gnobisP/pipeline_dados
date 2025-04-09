@@ -34,21 +34,28 @@ O projeto segue o padrão do desenho demonstado abaixo:
   cd pipeline_dados
 ```
 ### 🐧 Linux:
-  - **Instalando dependências:**
+**Instalando dependências:**
 ```sh
-  make setup
+make setup
 ```
-- **Rodando extratores separadamente**
+**Rodando extratores separadamente**
 ```sh
 make run-etl
 ```
-- **Rodando todo projeto**
+**Rodando todo o projeto**
+
+##### Abra um terminal e digite:
 ```sh
-make start-airflow-scheduler:
+make start-airflow-scheduler
 ```
-- **`Novo terminal`**
- ```sh
+##### Abra outro terminal e digite:
+```sh
 make start-airflow-webserver
+```
+
+**Rodando DAG para um dia específico**
+```sh
+airflow dags trigger -e 2025-02-05 pipeline_dados_indicium
 ```
 ### Credênciais
 
@@ -56,7 +63,6 @@ make start-airflow-webserver
 |--------------------|----------|
 | **👤 Usuário**     | Admin    |
 | **🔐 Senha**       | 123456   |
-
 
 
 ## 📁 Estrutura do Projeto
@@ -74,7 +80,7 @@ Contém os arquivos responsáveis pela arquitetura do pipeline
 ### 📂 `data`
 - **`order_details.csv`**: Planilha que contém as ordens.
 - **`northwind.sql`**: Comandos SQL para incializar BD da northwind.
-- **`warehouse.sql`**: Comandos SQL para incializar BD da warehouse.
+- **`sql`**: Comandos SQL para incializar BD da warehouse.
 
 ```sh
 /data/postgres/{table}/2024-01-01/file.format

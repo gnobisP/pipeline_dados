@@ -2,6 +2,10 @@
 VENV_PATH="/home/gnobisp/Documents/pipeline_dados/venv_meltano/bin/activate"
 PROJECT_PATH="/home/gnobisp/Documents/pipeline_dados/metano-project"
 
+DATE=${1:-$(date +"%Y-%m-%d")}
+echo "Data de execução recebida: $DATE"
+
+
 # Ativa o ambiente virtual
 source "$VENV_PATH"
 
@@ -9,8 +13,9 @@ source "$VENV_PATH"
 extract_csv() {
     set -e  # Para o script em caso de erro
     cd "$PROJECT_PATH"
-    DATE=$(date +"%Y-%m-%d") meltano elt tap-csv target-csv-csv
+    DATE="$DATE" meltano elt tap-csv target-csv-csv
 }
 
 # Chama a função
+
 extract_csv

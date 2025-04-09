@@ -139,9 +139,6 @@ plugins:
     inherit_from: target-jsonl
     config:
       destination_path: ../data/csv/$DATE
-
-
-
 ##
 #/data/postgres/{table}/2024-01-01/file.format
 #/data/postgres/{table}/2024-01-02/file.format
