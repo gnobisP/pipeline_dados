@@ -1,5 +1,5 @@
 -- PGPASSWORD=dw_password psql -h localhost -p 5433 -U dw_user -d data_warehouse
-
+10667
 --
 -- PostgreSQL database dump
 --
@@ -37,3 +37,8 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS region;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS order_details;
+
+SELECT * 
+FROM orders O join order_details OD on O.order_id = OD.order_id
+WHERE OD.order_id = '10341';
+
